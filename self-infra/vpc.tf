@@ -26,7 +26,7 @@ module "security_group" {
   egress_rules  = ["all-all"]
 
   tags = {
-    Terraform = "true"
+    Terraform   = "true"
     Environment = "dev"
   }
 }

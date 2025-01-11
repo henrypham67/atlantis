@@ -21,11 +21,10 @@ module "ec2_instance" {
   health_check_type         = "EC2"
   health_check_grace_period = 300
 
-  use_name_prefix   = "atlantis-lt-"
   image_id      = data.aws_ami.amazon_linux.id
   instance_type = "t3.micro"
   key_name      = aws_key_pair.my_key_pair.key_name
-  user_data = <<-EOT
+  user_data     = <<-EOT
               #!/bin/bash
               LATEST_RELEASE=$(curl -s https://api.github.com/repos/runatlantis/atlantis/releases/latest | grep "browser_download_url" | grep "linux_amd64" | cut -d '"' -f 4)
               curl -LO "$LATEST_RELEASE"
@@ -34,7 +33,7 @@ module "ec2_instance" {
               EOT
 
   tags = {
-    Terraform = "true"
+    Terraform   = "true"
     Environment = "dev"
   }
 }
@@ -81,7 +80,7 @@ module "alb" {
   }
 
   tags = {
-    Terraform = "true"
+    Terraform   = "true"
     Environment = "dev"
   }
 }
