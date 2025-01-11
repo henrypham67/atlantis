@@ -105,8 +105,3 @@ output "private_key" {
 output "key_name" {
   value = aws_key_pair.my_key_pair.key_name
 }
-
-resource "aws_key_pair" "my_key_pair" {
-  key_name   = "atlantis-key-pair"
-  public_key = file("~/.ssh/id_rsa.pub")
-}
