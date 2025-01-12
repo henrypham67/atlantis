@@ -70,7 +70,7 @@ module "alb" {
     }
   }
   listeners = {
-    http-https-redirect = {
+    http = {
       port     = 80
       protocol = "HTTP"
       forward = {
