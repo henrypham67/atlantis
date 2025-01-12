@@ -9,7 +9,7 @@ data "aws_ami" "amazon_linux" {
   owners = ["amazon"] # Amazon Linux AMIs are owned by Amazon
 }
 
-module "ec2_instance" {
+module "asg" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "8.0.1"
 
@@ -74,7 +74,7 @@ module "alb" {
       port     = 80
       protocol = "HTTP"
       forward = {
-        target_group_key = "atlantis-asg"
+        target_group_key = "asg"
       }
     }
   }
