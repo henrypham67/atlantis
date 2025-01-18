@@ -3,7 +3,7 @@
 - Atlantis
 - pre-commit for terraform repository
 
-## How to run
+## How to deploy
 
 ### Docker
 
@@ -14,8 +14,10 @@
 ### AWS
 
 - config AWS identity for CLI
+- `cp self-infra/tf.auto.tfvars.example self-infra/tf.auto.tfvars`
+- Fill all variables in `self-infra/tf.auto.tfvars`
 - `make aws`
 
-TODO:
+## TODO:
 
 - create proxy instead connect directly
