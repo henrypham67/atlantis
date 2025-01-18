@@ -1,24 +1,4 @@
 # Ref: https://github.com/tomoki171923/terraform-aws/blob/79b88631f4c5f044d4b242398beb37760c960518/ssm/modules/iam/data.tf
-
-variable "ATLANTIS_REPO_ALLOWLIST" {
-  sensitive = true
-}
-variable "ATLANTIS_GH_USER" {
-  sensitive = true
-}
-variable "ATLANTIS_GH_TOKEN" {
-  sensitive = true
-}
-variable "ATLANTIS_GH_WEBHOOK_SECRET" {
-  sensitive = true
-}
-variable "ACCESS_KEY_ID" {
-  sensitive = true
-}
-variable "SECRET_ACCESS_KEY" {
-  sensitive = true
-}
-
 locals {
   secrets = {
     ATLANTIS_REPO_ALLOWLIST = {
@@ -36,14 +16,6 @@ locals {
     ATLANTIS_GH_WEBHOOK_SECRET = {
       secure_type = true
       value = var.ATLANTIS_GH_WEBHOOK_SECRET
-    }
-    ACCESS_KEY_ID = {
-      secure_type = true
-      value = var.ACCESS_KEY_ID
-    }
-    SECRET_ACCESS_KEY = {
-      secure_type = true
-      value = var.SECRET_ACCESS_KEY
     }
   }
 }
