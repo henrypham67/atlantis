@@ -1,0 +1,37 @@
+services:
+  atlantis:
+    image: ghcr.io/runatlantis/atlantis:latest
+    container_name: atlantis
+    ports:
+      - "4141:4141"
+    environment:
+      ATLANTIS_REPO_ALLOWLIST: ${REPO_ALLOWLIST}
+      ATLANTIS_GH_USER: ${USERNAME}
+      ATLANTIS_GH_TOKEN: ${GH_TOKEN}
+      ATLANTIS_GH_WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    networks:
+      - atlantis-net
+
+  ngrok:
+    depends_on:
+      - atlantis
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    command:
+      - "http"
+      - "${NGROK_DOMAIN}"
+      - "http://atlantis:4141"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_TOKEN}
+    networks:
+      - atlantis-net
+    ports:
+      - 4040:4040
+
+volumes:
+  atlantis-data:
+
+networks:
+  atlantis-net:
