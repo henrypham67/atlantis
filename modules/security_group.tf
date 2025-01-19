@@ -5,11 +5,11 @@ module "security_group" {
 
   name        = "atlantis-sg"
   description = "Security group for Atlantis"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress_cidr_blocks = ["0.0.0.0/0"]
-  ingress_rules = ["http-8080-tcp", "https-443-tcp"]
-  egress_rules  = ["all-all"]
+  ingress_rules       = ["http-80-tcp", "https-443-tcp"]
+  egress_rules        = ["all-all"]
 
   tags = {
     Terraform   = "true"

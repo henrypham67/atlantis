@@ -1,4 +1,4 @@
-#!/bin/bash      
+#!/bin/bash
 
 # Install CloudWatch Agent
 yum install -y amazon-cloudwatch-agent
@@ -49,25 +49,69 @@ EOF
 
 echo "CloudWatch Agent setup complete"
 
-# install Terraform
+# Install Docker
+yum update -y
+yum install -y docker
+systemctl start docker
+systemctl enable docker
+
+# Install Terraform
 yum install -y yum-utils shadow-utils
 yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
 yum -y install terraform
 
-
+# Download and set up Atlantis
 LATEST_RELEASE=$(curl -s https://api.github.com/repos/runatlantis/atlantis/releases/latest | grep "browser_download_url" | grep "linux_amd64" | cut -d '"' -f 4)
 curl -LO "$LATEST_RELEASE"
 unzip atlantis_linux_amd64.zip
 chmod +x atlantis
 mv atlantis /usr/local/bin/
 
-# Cloudwatch collect logs
+# CloudWatch log setup
 sudo mkdir -p /var/log/atlantis
 sudo chmod 755 /var/log/atlantis
 
+# Fetch parameters from AWS SSM Parameter Store
 export ATLANTIS_REPO_ALLOWLIST=$(aws ssm get-parameter --name "ATLANTIS_REPO_ALLOWLIST" --with-decryption --query "Parameter.Value" --output text --region us-east-1)
 export ATLANTIS_GH_USER=$(aws ssm get-parameter --name "ATLANTIS_GH_USER" --with-decryption --query "Parameter.Value" --output text --region us-east-1)
 export ATLANTIS_GH_TOKEN=$(aws ssm get-parameter --name "ATLANTIS_GH_TOKEN" --with-decryption --query "Parameter.Value" --output text --region us-east-1)
 export ATLANTIS_GH_WEBHOOK_SECRET=$(aws ssm get-parameter --name "ATLANTIS_GH_WEBHOOK_SECRET" --with-decryption --query "Parameter.Value" --output text --region us-east-1)
 
-atlantis server --port 8080 > /var/log/atlantis/atlantis.log 2>&1 &
+docker create network atlantis-network
+
+# Run Atlantis Docker container
+docker run --name atlantis-server -d \
+  -p 4141:4141 \
+  -v /var/log/atlantis:/var/log/atlantis \
+  -e ATLANTIS_REPO_ALLOWLIST="$ATLANTIS_REPO_ALLOWLIST" \
+  -e ATLANTIS_GH_USER="$ATLANTIS_GH_USER" \
+  -e ATLANTIS_GH_TOKEN="$ATLANTIS_GH_TOKEN" \
+  -e ATLANTIS_GH_WEBHOOK_SECRET="$ATLANTIS_GH_WEBHOOK_SECRET" \
+  --network atlantis-network \
+  ghcr.io/runatlantis/atlantis:latest
+
+# Create NGINX configuration for Atlantis in Docker
+mkdir -p /etc/nginx/conf.d
+cat <<EOF > /etc/nginx/conf.d/atlantis.conf
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://atlantis-server:4141;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+}
+EOF
+
+# Run NGINX in Docker
+docker run --name nginx-proxy -d \
+  -p 80:80 \
+  -v /etc/nginx/conf.d:/etc/nginx/conf.d \
+  --network atlantis-network \
+  nginx:latest
+
+# Reload NGINX container to apply the configuration
+docker exec nginx-proxy nginx -s reload

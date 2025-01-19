@@ -21,21 +21,21 @@ module "asg" {
   health_check_type         = "EC2"
   health_check_grace_period = 300
 
-  image_id      = data.aws_ami.amazon_linux.id
-  instance_type = "t3.micro"
+  image_id                  = data.aws_ami.amazon_linux.id
+  instance_type             = "t3.micro"
   iam_instance_profile_name = module.iam_role.iam_instance_profile_name
-  user_data     = base64encode(file("${path.module}/script/init.sh"))
+  user_data                 = base64encode(file("${path.module}/script/init.sh"))
 
 
-  network_interfaces = [ 
+  network_interfaces = [
     {
-      delete_on_termination = true
-      description           = "eth0"
-      device_index          = 0
-      security_groups       = [module.security_group.security_group_id]
+      delete_on_termination       = true
+      description                 = "eth0"
+      device_index                = 0
+      security_groups             = [module.security_group.security_group_id]
       associate_public_ip_address = true
     }
-   ]
+  ]
 
   tags = {
     Terraform   = "true"

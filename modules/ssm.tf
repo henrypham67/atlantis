@@ -2,20 +2,18 @@
 locals {
   secrets = {
     ATLANTIS_REPO_ALLOWLIST = {
-      secure_type = true
-      value = var.ATLANTIS_REPO_ALLOWLIST
+      value       = var.ATLANTIS_REPO_ALLOWLIST
     }
     ATLANTIS_GH_USER = {
-      secure_type = true
-      value = var.ATLANTIS_GH_USER
+      value       = var.ATLANTIS_GH_USER
     }
     ATLANTIS_GH_TOKEN = {
       secure_type = true
-      value = var.ATLANTIS_GH_TOKEN
+      value       = var.ATLANTIS_GH_TOKEN
     }
     ATLANTIS_GH_WEBHOOK_SECRET = {
       secure_type = true
-      value = var.ATLANTIS_GH_WEBHOOK_SECRET
+      value       = var.ATLANTIS_GH_WEBHOOK_SECRET
     }
   }
 }
@@ -26,7 +24,7 @@ module "ssm_parameters" {
 
   for_each = local.secrets
 
-  name            = each.key
-  value           = try(each.value.value, null)
-  secure_type     = try(each.value.secure_type, null)
+  name        = each.key
+  value       = try(each.value.value, null)
+  secure_type = try(each.value.secure_type, null)
 }

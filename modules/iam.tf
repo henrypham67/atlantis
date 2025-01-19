@@ -5,12 +5,12 @@ module "iam_role" {
   trusted_role_services = [
     "ec2.amazonaws.com"
   ]
-  
+
   create_role = true
 
-  role_name         = "atlantis-EC2SSMManaged"
+  role_name = "atlantis-EC2SSMManaged"
 
-  role_requires_mfa = false
+  role_requires_mfa       = false
   create_instance_profile = true
 
   custom_role_policy_arns = [
@@ -26,7 +26,7 @@ module "iam_role" {
 ### Policy
 
 module "policy_kms_core" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
   version = "5.52.2"
 
   name        = "atlantis_kms_core"
@@ -70,7 +70,7 @@ data "template_file" "ssm_start_session" {
     aws_region      = data.aws_region.this.name
     environment_tag = "dev"
   }
-  
+
 }
 data "template_file" "kms_core" {
   template = file("${path.module}/policies/kms_core.json")

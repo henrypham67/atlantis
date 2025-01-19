@@ -1,8 +1,6 @@
 variable "ATLANTIS_REPO_ALLOWLIST" {
-  sensitive = true
 }
 variable "ATLANTIS_GH_USER" {
-  sensitive = true
 }
 variable "ATLANTIS_GH_TOKEN" {
   sensitive = true
@@ -12,4 +10,10 @@ variable "ATLANTIS_GH_WEBHOOK_SECRET" {
 }
 variable "region" {
   default = "us-east-1"
+}
+variable "vpc_id" {
+  type = string
+}
+variable "subnets" {
+  type = list(string)
 }
