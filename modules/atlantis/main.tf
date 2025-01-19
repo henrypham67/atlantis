@@ -14,7 +14,7 @@ module "asg" {
   version = "8.0.1"
 
   name                      = "atlantis-asg"
-  vpc_zone_identifier       = module.vpc.public_subnets
+  vpc_zone_identifier       = var.subnets
   min_size                  = 1
   max_size                  = 1
   desired_capacity          = 1

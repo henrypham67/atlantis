@@ -12,10 +12,10 @@ variable "region" {
   default = "us-east-1"
 }
 variable "vpc_id" {
-  nullable = true
-  type = string
+  default = ""
+  type    = string
 }
 variable "subnets" {
-  nullable = true
-  type = list(string)
+  default = []
+  type    = list(string)
 }

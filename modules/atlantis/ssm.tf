@@ -2,10 +2,10 @@
 locals {
   secrets = {
     ATLANTIS_REPO_ALLOWLIST = {
-      value       = var.ATLANTIS_REPO_ALLOWLIST
+      value = var.ATLANTIS_REPO_ALLOWLIST
     }
     ATLANTIS_GH_USER = {
-      value       = var.ATLANTIS_GH_USER
+      value = var.ATLANTIS_GH_USER
     }
     ATLANTIS_GH_TOKEN = {
       secure_type = true
