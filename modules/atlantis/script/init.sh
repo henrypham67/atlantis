@@ -55,44 +55,58 @@ yum install -y docker
 systemctl start docker
 systemctl enable docker
 
-# Install Terraform
-yum install -y yum-utils shadow-utils
-yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
-yum -y install terraform
+# Install Docker Compose
+curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d '"' -f 4)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-# Download and set up Atlantis
-LATEST_RELEASE=$(curl -s https://api.github.com/repos/runatlantis/atlantis/releases/latest | grep "browser_download_url" | grep "linux_amd64" | cut -d '"' -f 4)
-curl -LO "$LATEST_RELEASE"
-unzip atlantis_linux_amd64.zip
-chmod +x atlantis
-mv atlantis /usr/local/bin/
+echo "Docker and Docker Compose setup complete"
 
-# CloudWatch log setup
-sudo mkdir -p /var/log/atlantis
-sudo chmod 755 /var/log/atlantis
+# Create Docker Compose file
+mkdir -p /opt/atlantis
+cat <<EOF > /opt/atlantis/docker-compose.yml
+version: '3.7'
 
-# Fetch parameters from AWS SSM Parameter Store
-export ATLANTIS_REPO_ALLOWLIST=$(aws ssm get-parameter --name "ATLANTIS_REPO_ALLOWLIST" --with-decryption --query "Parameter.Value" --output text --region us-east-1)
-export ATLANTIS_GH_USER=$(aws ssm get-parameter --name "ATLANTIS_GH_USER" --with-decryption --query "Parameter.Value" --output text --region us-east-1)
-export ATLANTIS_GH_TOKEN=$(aws ssm get-parameter --name "ATLANTIS_GH_TOKEN" --with-decryption --query "Parameter.Value" --output text --region us-east-1)
-export ATLANTIS_GH_WEBHOOK_SECRET=$(aws ssm get-parameter --name "ATLANTIS_GH_WEBHOOK_SECRET" --with-decryption --query "Parameter.Value" --output text --region us-east-1)
+services:
+  atlantis:
+    image: ghcr.io/runatlantis/atlantis:latest
+    container_name: atlantis-server
+    networks:
+      - atlantis-network
+    ports:
+      - "4141:4141"
+    volumes:
+      - "/var/log/atlantis:/var/log/atlantis"
+    environment:
+      - ATLANTIS_REPO_ALLOWLIST=${ATLANTIS_REPO_ALLOWLIST}
+      - ATLANTIS_GH_USER=${ATLANTIS_GH_USER}
+      - ATLANTIS_GH_TOKEN=${ATLANTIS_GH_TOKEN}
+      - ATLANTIS_GH_WEBHOOK_SECRET=${ATLANTIS_GH_WEBHOOK_SECRET}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
 
-docker network create atlantis-network
+  nginx:
+    image: nginx:latest
+    container_name: nginx-proxy
+    networks:
+      - atlantis-network
+    ports:
+      - "80:80"
+    volumes:
+      - "/etc/nginx/conf.d:/etc/nginx/conf.d"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
 
-# Run Atlantis Docker container
-docker run --name atlantis-server -d \
-  -p 4141:4141 \
-  -v /var/log/atlantis:/var/log/atlantis \
-  -e ATLANTIS_REPO_ALLOWLIST="$ATLANTIS_REPO_ALLOWLIST" \
-  -e ATLANTIS_GH_USER="$ATLANTIS_GH_USER" \
-  -e ATLANTIS_GH_TOKEN="$ATLANTIS_GH_TOKEN" \
-  -e ATLANTIS_GH_WEBHOOK_SECRET="$ATLANTIS_GH_WEBHOOK_SECRET" \
-  --log-driver json-file \
-  --log-opt max-size=10m \
-  --network atlantis-network \
-  ghcr.io/runatlantis/atlantis:latest
+networks:
+  atlantis-network:
+    driver: bridge
+EOF
 
-# Create NGINX configuration for Atlantis in Docker
+# Create NGINX configuration
 mkdir -p /etc/nginx/conf.d
 cat <<EOF > /etc/nginx/conf.d/atlantis.conf
 server {
@@ -100,7 +114,7 @@ server {
     server_name _;
 
     location / {
-        proxy_pass http://atlantis-server:4141;
+        proxy_pass http://atlantis:4141;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -108,14 +122,8 @@ server {
 }
 EOF
 
-# Run NGINX in Docker
-docker run --name nginx-proxy -d \
-  -p 80:80 \
-  -v /etc/nginx/conf.d:/etc/nginx/conf.d \
-  --log-driver json-file \
-  --log-opt max-size=10m \
-  --network atlantis-network \
-  nginx:latest
+# Start services using Docker Compose
+cd /opt/atlantis
+/usr/local/bin/docker-compose up -d
 
-# Reload NGINX container to apply the configuration
-docker exec nginx-proxy nginx -s reload
+echo "Atlantis and NGINX setup complete using Docker Compose"
