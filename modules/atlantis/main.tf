@@ -22,7 +22,7 @@ module "asg" {
   health_check_grace_period = 300
 
   image_id                  = data.aws_ami.amazon_linux.id
-  instance_type             = "t3.micro"
+  instance_type             = var.instance_type
   iam_instance_profile_name = module.iam_role.iam_instance_profile_name
   user_data                 = base64encode(file("${path.module}/script/init.sh"))
 
