@@ -10,3 +10,6 @@ variable "ATLANTIS_GH_TOKEN" {
 variable "ATLANTIS_GH_WEBHOOK_SECRET" {
   sensitive = true
 }
+variable "region" {
+  default = "us-east-1"
+}
