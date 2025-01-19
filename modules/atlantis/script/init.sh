@@ -28,9 +28,9 @@ cat <<EOF > /opt/aws/amazon-cloudwatch-agent/bin/config.json
             "timezone": "UTC"
           },
           {
-            "file_path": "/var/log/atlantis/atlantis.log",
-            "log_group_name": "atlantis-log-group",
-            "log_stream_name": "{instance_id}",
+            "file_path": "/var/lib/docker/containers/*/*.log",
+            "log_group_name": "docker-containers-log-group",
+            "log_stream_name": "docker-{container_id}",
             "timezone": "UTC"
           }
         ]
@@ -77,7 +77,7 @@ export ATLANTIS_GH_USER=$(aws ssm get-parameter --name "ATLANTIS_GH_USER" --with
 export ATLANTIS_GH_TOKEN=$(aws ssm get-parameter --name "ATLANTIS_GH_TOKEN" --with-decryption --query "Parameter.Value" --output text --region us-east-1)
 export ATLANTIS_GH_WEBHOOK_SECRET=$(aws ssm get-parameter --name "ATLANTIS_GH_WEBHOOK_SECRET" --with-decryption --query "Parameter.Value" --output text --region us-east-1)
 
-docker create network atlantis-network
+docker network create atlantis-network
 
 # Run Atlantis Docker container
 docker run --name atlantis-server -d \
@@ -87,6 +87,8 @@ docker run --name atlantis-server -d \
   -e ATLANTIS_GH_USER="$ATLANTIS_GH_USER" \
   -e ATLANTIS_GH_TOKEN="$ATLANTIS_GH_TOKEN" \
   -e ATLANTIS_GH_WEBHOOK_SECRET="$ATLANTIS_GH_WEBHOOK_SECRET" \
+  --log-driver json-file \
+  --log-opt max-size=10m \
   --network atlantis-network \
   ghcr.io/runatlantis/atlantis:latest
 
@@ -110,6 +112,8 @@ EOF
 docker run --name nginx-proxy -d \
   -p 80:80 \
   -v /etc/nginx/conf.d:/etc/nginx/conf.d \
+  --log-driver json-file \
+  --log-opt max-size=10m \
   --network atlantis-network \
   nginx:latest
 
