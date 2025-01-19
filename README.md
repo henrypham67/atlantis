@@ -18,6 +18,6 @@
 - Fill all variables in `self-infra/tf.auto.tfvars`
 - `make aws`
 
-## TODO:
+## TODO
 
-- create proxy instead connect directly
+- make another secure version (private subnet, ALB, NAT) -> protect powerful role
